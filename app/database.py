@@ -48,11 +48,12 @@ def get_list():
     metrics = []
     for row in rows:
         metrics.append({
-            "func_name": row[0],
-            "execution_time": row[1],
-            "call_count": row[2],
-            "error_count": row[3],
+            "Function": row[0],
+            "Number of calls": row[1],
+            "Average execution time": row[2],
+            "Number of errors": row[3],
         })
 
     conn.close()  # Always close the connection when done
-    return metrics
+
+    return {"count": len(metrics), "metrics": metrics}

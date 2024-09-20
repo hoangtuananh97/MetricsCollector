@@ -1,7 +1,10 @@
+import os
 import time
 
 from app.database import get_list
 from app.decorators import metrics_collector
+
+TIME_SCHEDULE = int(os.getenv('TIME_SCHEDULE', 3))
 
 
 # Example sync functions to test the decorator
@@ -52,7 +55,10 @@ def main():
         pass
 
     print("Get List")
+    print(f"To easy for demo. We will wait base on time interval ({TIME_SCHEDULE}s) that be set in .env file.")
+    time.sleep(TIME_SCHEDULE)
     print(get_list())
+
 
 # Run the example
 if __name__ == "__main__":

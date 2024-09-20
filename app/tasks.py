@@ -13,6 +13,7 @@ load_dotenv()
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
 DATABASE_NAME = os.getenv('DATABASE_NAME')
+TIME_SCHEDULE = int(os.getenv('TIME_SCHEDULE', 3))
 
 celery_app = Celery('MetricsCollector', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
@@ -21,9 +22,9 @@ celery_app.conf.update(
     accept_content=['json'],
     result_serializer='json',
     beat_schedule={
-        'save-metrics-every-3-seconds': {
+        'save-metrics-every-interval': {
             'task': 'app.tasks.periodic_save_metrics',
-            'schedule': timedelta(seconds=3),
+            'schedule': timedelta(seconds=TIME_SCHEDULE),
         },
     }
 )
