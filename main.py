@@ -1,5 +1,6 @@
 import time
 
+from app.database import get_list
 from app.decorators import metrics_collector
 
 
@@ -34,18 +35,6 @@ def error_function():
     raise ValueError("An error occurred")
 
 
-@metrics_collector
-def error_function1():
-    time.sleep(0.1)  # Simulate some work
-    raise ValueError("An error occurred")
-
-
-@metrics_collector
-def error_function2():
-    time.sleep(0.1)  # Simulate some work
-    raise ValueError("An error occurred")
-
-
 # Example usage
 def main():
     try:
@@ -54,14 +43,16 @@ def main():
         successful_function1(2, 3)
         for _ in range(3):
             successful_function2(2, 3)
+
         successful_function3(2, 3)
         error_function()
-        error_function1()
-        error_function2()
+
         print("End")
     except ValueError:
         pass
 
+    print("Get List")
+    print(get_list())
 
 # Run the example
 if __name__ == "__main__":

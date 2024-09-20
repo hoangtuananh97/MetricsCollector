@@ -52,7 +52,6 @@ Create a `.env` file in the project root and add the following content (you can 
 ```bash
 CELERY_BROKER_URL=redis://redis:6379/0
 CELERY_RESULT_BACKEND=redis://redis:6379/0
-METRICS_MAX_SIZE=3
 ```
 
 ---

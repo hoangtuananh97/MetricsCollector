@@ -18,14 +18,14 @@ services:
       - .env
     command: celery -A app.tasks.celery_app worker --loglevel=info
 
-#
-#  beat:
-#    build: .
-#    container_name: "celery_beat"
-#    depends_on:
-#      - redis
-#    volumes:
-#      - .:/app
-#    environment:
-#      - CELERY_BROKER_URL=redis://redis:6379/0
-#    command: celery -A celeryconfig.app beat --loglevel=info
+
+  beat:
+    build: .
+    container_name: "celery_beat"
+    depends_on:
+      - redis
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    command: celery -A app.tasks.celery_app beat --loglevel=info

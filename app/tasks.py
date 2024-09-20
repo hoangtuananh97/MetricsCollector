@@ -1,13 +1,18 @@
 import os
 import sqlite3
+from datetime import timedelta
 
 from celery import Celery
 from dotenv import load_dotenv
+
+from app.database import insert
+from app.metrics_storage import metrics_storage
 
 load_dotenv()
 # Fetch environment variables
 CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
 CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
+DATABASE_NAME = os.getenv('DATABASE_NAME')
 
 celery_app = Celery('MetricsCollector', broker=CELERY_BROKER_URL, backend=CELERY_RESULT_BACKEND)
 
@@ -15,24 +20,18 @@ celery_app.conf.update(
     task_serializer='json',
     accept_content=['json'],
     result_serializer='json',
+    beat_schedule={
+        'save-metrics-every-3-seconds': {
+            'task': 'app.tasks.periodic_save_metrics',
+            'schedule': timedelta(seconds=3),
+        },
+    }
 )
 
 
-# Celery task for saving metrics to the database asynchronously
 @celery_app.task
-def save_metrics_task(metrics):
-    with sqlite3.connect('metrics.db') as conn:
-        cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS metrics (
-                                func_name TEXT, 
-                                execution_time REAL, 
-                                call_count INTEGER, 
-                                error_count INTEGER
-                          )''')
-
-        # Insert each metric into the SQLite database
-        for func_name, data in metrics.items():
-            cursor.execute('''INSERT INTO metrics (func_name, execution_time, call_count, error_count)
-                              VALUES (?, ?, ?, ?)''',
-                           (func_name, data['execution_time'], data['call_count'], data['error_count']))
-        conn.commit()
+def periodic_save_metrics():
+    if metrics_storage.has_metrics():
+        metrics = metrics_storage.get_all_metrics()
+        insert(metrics)
+        metrics_storage.clear_metrics()
