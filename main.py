@@ -55,7 +55,7 @@ def main():
         pass
 
     print("Get List")
-    print(f"To easy for demo. We will wait base on time interval ({TIME_SCHEDULE}s) that be set in .env file.")
+    print(f"For this demo, we'll wait based on the time interval ({TIME_SCHEDULE}s) specified in the .env file.")
     time.sleep(TIME_SCHEDULE)
     print(get_list())
 
