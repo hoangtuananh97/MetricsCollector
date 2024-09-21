@@ -212,7 +212,7 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 ```
 [Service A] →  [Kafka Topic A]  ──►  
                                      ──► [Metrics Processor] ──► [InfluxDB / TimescaleDB]
-[Service B] →  [Kafka Topic B]  ──►                                └──► [Elasticsearch]
+[Service B] →  [Kafka Topic B]  ──►                                └──► [Elasticsearch] ──► Dashboard(Grafana/Kibana)
 ```
 
 ### Detailed Architecture Overview for **MetricsCollector**:
