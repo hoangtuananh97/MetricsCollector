@@ -210,9 +210,9 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 
 ### Diagram Example (Textual):
 ```
-[Service A] →  [Kafka Topic A]  ──►  
-                                     ──► [Metrics Processor] ──► [InfluxDB / TimescaleDB]
-[Service B] →  [Kafka Topic B]  ──►                                └──► [Elasticsearch] ──► Dashboard(Grafana/Kibana)
+[Service A] →  [Queue Kafka Topic A]  ──►  
+                                     ──► [Metrics Processor] ──► [Queue Kafka Topic Push] ──► [InfluxDB / TimescaleDB]
+[Service B] →  [Queue Kafka Topic B]  ──►                                                          └──► [Elasticsearch] ──► Dashboard(Grafana/Kibana)
 ```
 
 ### Detailed Architecture Overview for **MetricsCollector**:
