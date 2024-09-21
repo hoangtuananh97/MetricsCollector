@@ -205,6 +205,74 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 
 ---
 
+## Microservices
+
+
+### Diagram Example (Textual):
+```
+[Service A] →  [Kafka Topic A]  ──►  
+                                     ──► [Metrics Processor] ──► [InfluxDB / TimescaleDB]
+[Service B] →  [Kafka Topic B]  ──►                                └──► [Elasticsearch]
+```
+
+### Detailed Architecture Overview for **MetricsCollector**:
+
+1. **Microservices → Kafka**:
+   - **Microservices** (e.g., Service A, Service B) publish their metrics (execution time, errors, etc.) to dedicated Kafka topics (`metrics_topic`).
+   - Kafka ensures fault tolerance, handles high-throughput streaming, and provides scalability. Each microservice pushes its metrics asynchronously, decoupling services from metrics collection.
+
+2. **Metrics Processor**:
+   - A **Metrics Processor** service acts as a **Kafka consumer** and reads metrics from Kafka topics.
+   - The processor aggregates metrics, caches them temporarily in **Redis** (for quick access and failure recovery), and pushes them to a **Time-Series Database** like **InfluxDB** or **TimescaleDB** for efficient long-term storage and historical analysis.
+   - It can also index the metrics in **Elasticsearch** for full-text search, making it easy to query specific metrics across services.
+
+3. **Time-Series Database (InfluxDB/TimescaleDB)**:
+   - Metrics like execution time and error count are stored with timestamps. This database is optimized for querying time-series data, which allows you to efficiently monitor performance trends over time.
+
+4. **Elasticsearch**:
+   - The metrics are also indexed in Elasticsearch for powerful searching and analytics. Elasticsearch allows you to search through large amounts of data quickly, enabling you to find metrics for specific services or functions easily.
+
+5. **Dashboard (Grafana/Kibana)**:
+   - **Grafana** (connected to the Time-Series DB) or **Kibana** (connected to Elasticsearch) can be used to visualize metrics in real-time.
+   - These dashboards can show graphs for error rates, performance trends, and other relevant metrics, offering deep insights into the behavior of your microservices.
+
+6. **Prometheus for Monitoring and Alerts**:
+   - Optionally, **Prometheus** can be integrated for real-time monitoring and alerting. Prometheus pulls metrics directly from services or from Redis and sets up alerts when certain thresholds are exceeded (e.g., high error rates).
+
+### Data Flow:
+- **Step 1**: Microservices generate metrics and publish them to **Kafka**.
+- **Step 2**: The **Metrics Processor** consumes these metrics, processes them, and stores them in **Redis** for temporary caching.
+- **Step 3**: Metrics are then flushed to a **Time-Series Database** (for time-based analysis) and **Elasticsearch** (for advanced search).
+- **Step 4**: **Grafana** or **Kibana** dashboards provide visualization, while **Prometheus** can handle real-time monitoring and alerting.
+
+This architecture allows for **scalability**, **fault tolerance**, **efficient data handling**, and **advanced analysis** of microservice metrics across distributed environments.
+
+---
+
+### Technologies Integrated: Pros and Cons
+
+1. **Kafka** (Message Queue)
+   - **Pros**: Highly scalable, distributed, fault-tolerant, handles high-throughput, enables real-time data streaming, reliable replication.
+   - **Cons**: Complex to set up and manage, requires careful tuning for high performance, can be overkill for simple projects.
+
+2. **Redis** (Cache)
+   - **Pros**: Fast in-memory data store, supports various data structures, can reduce database load, simple to configure.
+   - **Cons**: Limited to in-memory storage, not ideal for persistent large-scale data storage, requires memory management.
+
+3. **Time-Series/ClickHouse Database** (InfluxDB/TimescaleDB)
+   - **Pros**: Optimized for time-based data, efficient querying of historical metrics, supports high ingestion rates.
+   - **Cons**: Complex queries can be slower compared to relational databases, may require specific knowledge for tuning.
+
+4. **Elasticsearch** (Search & Analytics)
+   - **Pros**: Powerful full-text search capabilities, fast and scalable indexing, great for log and metric analysis.
+   - **Cons**: Resource-intensive, requires tuning for scaling, complex query language.
+
+5. **Prometheus** (Monitoring)
+   - **Pros**: Real-time monitoring, customizable alerts, lightweight, open-source.
+   - **Cons**: Not suited for long-term storage, limited support for full-text search and complex queries.
+
+---
 ## Conclusion
 
 With this project, you can seamlessly collect function execution metrics and store them both in-memory and in a persistent database (via SQLite). The asynchronous task handling and periodic saving ensure the system is scalable and efficient.
+
