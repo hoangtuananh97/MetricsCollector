@@ -23,16 +23,30 @@ def connect_db():
     return conn, cursor
 
 
+import sqlite3
+
+
 def insert(metrics):
-    """Insert metrics into the database."""
+    """Insert multiple metrics into the database at once using bulk insert with error handling."""
     conn, cursor = connect_db()  # Ensure the connection and table are ready
-    # Insert each metric into the SQLite database
-    for data in metrics:
-        cursor.execute('''INSERT INTO metrics (func_name, execution_time, error_occurred, created_at)
-                          VALUES (?, ?, ?, ?)''',
-                       (data['func_name'], data['execution_time'], data['error_occurred'], data['created_at']))
-    conn.commit()
-    conn.close()
+    try:
+        # Prepare data for bulk insert
+        bulk_data = [
+            (data['func_name'], data['execution_time'], data['error_occurred'], data['created_at'])
+            for data in metrics
+        ]
+        # Bulk insert using executemany
+        cursor.executemany('''INSERT INTO metrics (func_name, execution_time, error_occurred, created_at)
+                              VALUES (?, ?, ?, ?)''', bulk_data)
+        conn.commit()
+    except sqlite3.Error as e:
+        # Handle any SQLite-related errors
+        print(f"An error occurred while inserting metrics: {e}")
+        conn.rollback()  # Rollback if any error occurs during insert
+    finally:
+        # Ensure that the connection is closed
+        if conn:
+            conn.close()
 
 
 def get_list():
