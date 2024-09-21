@@ -161,7 +161,7 @@ To run the test by console:
 3. **Periodic Saving**: This ensures that even if the function isn’t frequently called, metrics will still be stored at regular intervals, maintaining data integrity.
 4. **Auto-saving on Threshold**: When a set number of metrics accumulate, they are automatically saved, preventing memory overload and ensuring timely data persistence.
 
-Using Singleton in Metrics Storage
+Using **Singleton Pattern** in Metrics Storage
 
 1. **Centralized Access**: A singleton ensures that there is only one instance of the metrics storage, which is essential for maintaining a consistent state across the application. Multiple instances could lead to conflicting or duplicated data.
 
