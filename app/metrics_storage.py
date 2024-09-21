@@ -1,78 +1,81 @@
 import os
-import redis
-from collections import defaultdict
+import threading
+from datetime import datetime, timezone
+
 from dotenv import load_dotenv
-import json
-from datetime import datetime
 
 # Load environment variables from the .env file
 load_dotenv()
-
-# Fetch the MAX_SIZE and REDIS_URL from the environment
-REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')  # Redis URL
-
-# Initialize Redis client
-redis_client = redis.StrictRedis.from_url(REDIS_URL)
+# Max items to save database
+MAX_ITEMS = int(os.getenv('MAX_ITEMS', 100))
+# Max waiting time to save remaining metrics data if less than MAX_ITEMS
+MAX_WAITING_TIME = int(os.getenv('MAX_WAITING_TIME', 60))
 
 
-class RedisMetricsStorage:
-    """Metrics storage backed by Redis."""
+class InMemoryMetricsStorage:
+    """Metrics storage in-memory using Singleton pattern."""
 
-    def _get_redis_key(self):
-        """Returns the Redis key used for storing metrics."""
-        return "app:metrics"
+    _instance = None
+
+    def __init__(self):
+        self.timer = None
+        self.last_save_time = None
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(InMemoryMetricsStorage, cls).__new__(cls, *args, **kwargs)
+            cls._instance.metrics = []
+            cls._instance.last_save_time = datetime.now(timezone.utc)
+            cls._instance.start_timer()
+        return cls._instance
+
+    def start_timer(self):
+        """Start a timer to save metrics every minute if needed."""
+        self.timer = threading.Timer(MAX_WAITING_TIME, self.check_and_save_metrics)
+        self.timer.start()
 
     def add_metrics(self, func_name, data):
         """Add or update metrics for the given function."""
-        redis_key = self._get_redis_key()
 
-        # Get existing metrics from Redis
-        existing_metrics = redis_client.get(redis_key)
-        if existing_metrics:
-            metrics = json.loads(existing_metrics)
-        else:
-            metrics = defaultdict(lambda: {
-                'execution_time': 0,
-                'call_count': 0,
-                'error_count': 0,
-                'created_at': str(datetime.now().isoformat())  # Default created_at time for new metrics
-            })
-
-        # If func_name exists, update the metrics
-        if func_name in metrics:
-            metrics[func_name]['execution_time'] += data['execution_time']
-            metrics[func_name]['call_count'] += data['call_count']
-            metrics[func_name]['error_count'] += data['error_count']
-        else:
-            # If func_name does not exist, create a new metric with created_at timestamp
-            metrics[func_name] = {
+        # Create new metrics entry
+        self.metrics.append(
+            {
+                'func_name': func_name,
                 'execution_time': data['execution_time'],
-                'call_count': data['call_count'],
-                'error_count': data['error_count'],
-                'created_at': str(datetime.now().isoformat())
+                'error_occurred': data.get('error_occurred', 0),
+                'created_at': datetime.now(timezone.utc).timestamp()  # Store as Unix timestamp
             }
+        )
 
-        # Save updated metrics back to Redis
-        redis_client.set(redis_key, json.dumps(metrics))
+        if len(self.metrics) >= MAX_ITEMS:
+            self.save_metrics()
+
+    def save_metrics(self):
+        """Save the metrics to the database."""
+        from app.tasks import insert_metrics
+        insert_metrics.delay(self.metrics.copy())
+        self.clear_metrics()
+        self.last_save_time = datetime.now(timezone.utc)
+
+    def check_and_save_metrics(self):
+        """Check if there are metrics and save them periodically."""
+        if self.has_metrics():
+            self.save_metrics()
+        # Restart the timer
+        self.start_timer()
 
     def get_all_metrics(self):
         """Return all stored metrics."""
-        redis_key = self._get_redis_key()
-        metrics = redis_client.get(redis_key)
-
-        if metrics:
-            return json.loads(metrics)
-        return {}
+        return self.metrics
 
     def has_metrics(self):
         """Check if there are any metrics stored."""
-        return bool(self.get_all_metrics())
+        return bool(self.metrics)
 
     def clear_metrics(self):
-        """Clear the top 10 oldest metrics from Redis based on created_at timestamp."""
-        redis_key = self._get_redis_key()
-        redis_client.delete(redis_key)
+        """Clear all metrics."""
+        self.metrics.clear()
 
 
-# Create an instance of RedisMetricsStorage
-metrics_storage = RedisMetricsStorage()
+# Singleton instance of InMemoryMetricsStorage
+metrics_storage = InMemoryMetricsStorage()

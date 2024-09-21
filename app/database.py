@@ -16,9 +16,8 @@ def connect_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS metrics (
                             func_name TEXT, 
                             execution_time REAL, 
-                            call_count INTEGER, 
-                            error_count INTEGER,
-                            created_at TEXT
+                            error_occurred INTEGER,
+                            created_at INTEGER
                       )''')
     conn.commit()
     return conn, cursor
@@ -28,18 +27,25 @@ def insert(metrics):
     """Insert metrics into the database."""
     conn, cursor = connect_db()  # Ensure the connection and table are ready
     # Insert each metric into the SQLite database
-    for func_name, data in metrics.items():
-        cursor.execute('''INSERT INTO metrics (func_name, execution_time, call_count, error_count, created_at)
-                          VALUES (?, ?, ?, ?, ?)''',
-                       (func_name, data['execution_time'], data['call_count'], data['error_count'], data['created_at']))
+    for data in metrics:
+        cursor.execute('''INSERT INTO metrics (func_name, execution_time, error_occurred, created_at)
+                          VALUES (?, ?, ?, ?)''',
+                       (data['func_name'], data['execution_time'], data['error_occurred'], data['created_at']))
     conn.commit()
-    conn.close()  # Always close the connection when done
+    conn.close()
 
 
 def get_list():
     """Retrieve all metrics from the database as a list of dictionaries."""
     conn, cursor = connect_db()  # Ensure connection is established
-    cursor.execute("SELECT * FROM metrics")
+    cursor.execute("""
+    SELECT func_name, 
+       COUNT(*) AS call_count, 
+       SUM(execution_time) AS total_execution_time, 
+       SUM(error_occurred) AS total_errors
+    FROM metrics
+    GROUP BY func_name;
+    """)
 
     # Fetch all rows from the metrics table
     rows = cursor.fetchall()
@@ -50,7 +56,7 @@ def get_list():
         metrics.append({
             "Function": row[0],
             "Number of calls": row[1],
-            "Average execution time": row[2],
+            "Average execution time": row[2] / row[1],
             "Number of errors": row[3],
         })
 

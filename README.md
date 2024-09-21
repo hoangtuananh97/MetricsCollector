@@ -7,9 +7,9 @@ The **MetricsCollector** project is designed to collect and store function execu
 
 ### Key Features:
 - **Function Metrics Collection**: Automatically collects execution time, call count, and error count for decorated functions.
-- **In-Memory Storage via Redis**: Temporarily stores metrics in Redis for fast access before flushing to the SQLite database.
 - **Asynchronous Task Management**: Uses Celery for asynchronous task processing and periodic metrics saving.
 - **Periodic Metrics Saving**: Periodically saves metrics to the database even if the limit is not reached.
+- **Auto Metrics Saving**: Auto saves metrics to the database even if the limit is reached.
 - **Dockerized**: Easily deployable using Docker and Docker Compose for all components (Redis, Celery, and the application).
 - **Configurable Environment Variables**: The project uses a `.env` file for customizable configuration.
 
@@ -63,8 +63,11 @@ REDIS_URL=redis://redis:6379/0
 # Database name
 DATABASE_NAME=metrics.db
 
-# Time interval
-TIME_SCHEDULE=5
+# Max items to save database
+MAX_ITEMS=3
+
+# Max waiting time to save remaining metrics data if less than MAX_ITEMS
+MAX_WAITING_TIME=5
 
 ```
 
@@ -92,14 +95,6 @@ Run the Celery worker in one terminal window to process the tasks:
 
 ```bash
 celery -A app.tasks.celery_app worker --loglevel=info
-```
-
-### Step 3: Start Celery Beat (for periodic tasks)
-
-Run Celery Beat in another terminal window to periodically trigger metrics saving tasks:
-
-```bash
-celery -A app.tasks.celery_app beat --loglevel=info
 ```
 
 ---
@@ -150,17 +145,23 @@ def error_function():
     raise ValueError("An error occurred")
 ```
 
-To run the test:
+To run the test by docker:
 
 ```bash
 docker-compose run celery_worker python main.py
 ```
 
+To run the test by console:
+
+```bash
+./main.py
+```
+
 ### How it Works
 
 - Functions decorated with `@metrics_collector` will have their execution time, call count, and error count collected.
-- These metrics will first be stored in **Redis**.
-- After the configured time interval (via Celery Beat), the metrics are flushed to **SQLite** for persistent storage.
+- Auto saves metrics to the database even if the limit is reached. the limit be set `MAX_ITEMS`.
+- Periodically saves metrics to the database even if the limit is not reached after schedule time be set `MAX_WAITING_TIME`.
 
 ### Accessing the Metrics
 
@@ -175,8 +176,8 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 1. **Redis not connecting**:
    - Ensure Redis is running on `localhost:6379`. If you're using Docker, check if the Redis container is running properly by checking `docker ps`.
 
-2. **Celery Worker/Beat not starting**:
-   - Check for errors in the logs when running `celery worker` or `celery beat`. Often, the issue is with the broker URL or missing dependencies.
+2. **Celery Worker not starting**:
+   - Check for errors in the logs when running `celery worker` . Often, the issue is with the broker URL or missing dependencies.
    - Ensure that your `.env` file is correctly configured with the Redis broker and backend URLs.
 
 3. **SQLite file permissions issue**:
@@ -189,4 +190,4 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 
 ## Conclusion
 
-With this project, you can seamlessly collect function execution metrics and store them both in-memory (via Redis) and in a persistent database (via SQLite). The asynchronous task handling and periodic saving ensure the system is scalable and efficient.
+With this project, you can seamlessly collect function execution metrics and store them both in-memory and in a persistent database (via SQLite). The asynchronous task handling and periodic saving ensure the system is scalable and efficient.

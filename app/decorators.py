@@ -1,4 +1,3 @@
-import os
 import time
 from functools import wraps
 from dotenv import load_dotenv
@@ -15,12 +14,12 @@ def metrics_collector(func):
         start_time = time.perf_counter()
 
         # Initialize local metrics
-        local_metrics = {'execution_time': 0, 'call_count': 1, 'error_count': 0}
+        local_metrics = {'execution_time': 0, 'error_occurred': 0}
 
         try:
             result = func(*args, **kwargs)
         except Exception:
-            local_metrics['error_count'] += 1
+            local_metrics['error_occurred'] += 1
             raise
         finally:
             # Record execution time

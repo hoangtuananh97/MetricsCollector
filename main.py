@@ -4,7 +4,7 @@ import time
 from app.database import get_list
 from app.decorators import metrics_collector
 
-TIME_SCHEDULE = int(os.getenv('TIME_SCHEDULE', 3))
+MAX_WAITING_TIME = int(os.getenv('MAX_WAITING_TIME', 60))
 
 
 # Example sync functions to test the decorator
@@ -55,8 +55,8 @@ def main():
         pass
 
     print("Get List")
-    print(f"For this demo, we'll wait based on the time interval ({TIME_SCHEDULE}s) specified in the .env file.")
-    time.sleep(TIME_SCHEDULE)
+    print(f"For this demo, we'll wait based on the time interval ({MAX_WAITING_TIME}s) specified in the .env file.")
+    time.sleep(MAX_WAITING_TIME)
     print(get_list())
 
 
