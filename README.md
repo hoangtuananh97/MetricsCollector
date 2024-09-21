@@ -3,7 +3,7 @@
 # MetricsCollector
 
 ## Introduction
-The **MetricsCollector** project is designed to collect and store function execution metrics. It features asynchronous task management using Celery, a Redis backend for storing metrics in memory, and SQLite for long-term storage. Metrics such as execution time, call count, and error count are collected and processed either when a set limit is reached or after a fixed time interval.
+The **MetricsCollector** project is designed to collect and store function execution metrics. It features asynchronous task management using Celery, and SQLite for long-term storage. Metrics such as execution time, call count, and error count are collected and processed either when a set limit is reached or after a fixed time interval.
 
 ### Key Features:
 - **Function Metrics Collection**: Automatically collects execution time, call count, and error count for decorated functions.
@@ -12,7 +12,7 @@ The **MetricsCollector** project is designed to collect and store function execu
 - **Auto Metrics Saving**: Auto saves metrics to the database even if the limit is reached.
 - **Dockerized**: Easily deployable using Docker and Docker Compose for all components (Redis, Celery, and the application).
 - **Configurable Environment Variables**: The project uses a `.env` file for customizable configuration.
-
+- **Get List Metric**: List of `Number of calls`, `Average execution time`, `Number of errors` of each `Function`
 ---
 
 ## Prerequisites
@@ -56,9 +56,6 @@ CELERY_BROKER_URL=redis://redis:6379/0
 
 # Redis result backend URL
 CELERY_RESULT_BACKEND=redis://redis:6379/0
-
-# Redis
-REDIS_URL=redis://redis:6379/0
 
 # Database name
 DATABASE_NAME=metrics.db
@@ -156,6 +153,26 @@ To run the test by console:
 ```bash
 ./main.py
 ```
+
+### Step Approach
+
+1. **Metrics Collection**: Automatically gathering function metrics helps analyze performance, identify bottlenecks, and spot potential issues (like error frequency).
+2. **Asynchronous Task Management (Celery)**: Celery allows for efficient task handling, particularly useful when storing large amounts of data without blocking the main application.
+3. **Periodic Saving**: This ensures that even if the function isn’t frequently called, metrics will still be stored at regular intervals, maintaining data integrity.
+4. **Auto-saving on Threshold**: When a set number of metrics accumulate, they are automatically saved, preventing memory overload and ensuring timely data persistence.
+
+Using Singleton in Metrics Storage
+
+1. **Centralized Access**: A singleton ensures that there is only one instance of the metrics storage, which is essential for maintaining a consistent state across the application. Multiple instances could lead to conflicting or duplicated data.
+
+2. **Global Access**: A singleton provides global access to the metrics storage, which means any part of the application can easily add or retrieve metrics without passing the instance around.
+
+3. **Efficient Resource Management**: Having a single instance avoids excessive memory consumption, which would occur with multiple storage instances.
+
+4. **Thread-Safety**: In a multi-threaded environment (like when using `threading.Timer`), a singleton ensures that only one instance is being accessed and modified, reducing race conditions and ensuring safe data handling. 
+
+This setup ensures reliability, scalability, and real-time performance tracking.
+Singleton pattern is critical for projects where centralized, consistent, and low-memory storage is required, particularly for in-memory storage like in this project.
 
 ### How it Works
 

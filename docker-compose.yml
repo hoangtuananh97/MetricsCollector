@@ -17,15 +17,3 @@ services:
     env_file:
       - .env
     command: celery -A app.tasks.celery_app worker --loglevel=info
-
-
-  beat:
-    build: .
-    container_name: "celery_beat"
-    depends_on:
-      - redis
-    volumes:
-      - .:/app
-    env_file:
-      - .env
-    command: celery -A app.tasks.celery_app beat --loglevel=info

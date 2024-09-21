@@ -59,7 +59,7 @@ class InMemoryMetricsStorage:
 
     def check_and_save_metrics(self):
         """Check if there are metrics and save them periodically."""
-        if self.has_metrics():
+        if self.has_metrics() and len(self.metrics) < MAX_ITEMS:
             self.save_metrics()
         # Restart the timer
         self.start_timer()
