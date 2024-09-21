@@ -18,21 +18,20 @@ class InMemoryMetricsStorage:
     _instance = None
 
     def __init__(self):
-        self.timer = None
-        self.last_save_time = None
+        if not hasattr(self, 'timer'):
+            self.timer = None
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
             cls._instance = super(InMemoryMetricsStorage, cls).__new__(cls, *args, **kwargs)
             cls._instance.metrics = []
-            cls._instance.last_save_time = datetime.now(timezone.utc)
-            cls._instance.start_timer()
         return cls._instance
 
     def start_timer(self):
-        """Start a timer to save metrics every minute if needed."""
-        self.timer = threading.Timer(MAX_WAITING_TIME, self.check_and_save_metrics)
-        self.timer.start()
+        """Start a timer only if it's not already running."""
+        if self.timer is None or not self.timer.is_alive():
+            self.timer = threading.Timer(MAX_WAITING_TIME, self.check_and_save_metrics)
+            self.timer.start()
 
     def add_metrics(self, func_name, data):
         """Add or update metrics for the given function."""
@@ -50,19 +49,22 @@ class InMemoryMetricsStorage:
         if len(self.metrics) >= MAX_ITEMS:
             self.save_metrics()
 
+        # Start the timer to save metrics if the limit is not reached
+        self.start_timer()
+
     def save_metrics(self):
         """Save the metrics to the database."""
         from app.tasks import insert_metrics
         insert_metrics.delay(self.metrics.copy())
         self.clear_metrics()
-        self.last_save_time = datetime.now(timezone.utc)
 
     def check_and_save_metrics(self):
         """Check if there are metrics and save them periodically."""
         if self.has_metrics() and len(self.metrics) < MAX_ITEMS:
             self.save_metrics()
-        # Restart the timer
-        self.start_timer()
+        # Cancel the timer after saving metrics
+        if self.timer is not None:
+            self.timer.cancel()
 
     def get_all_metrics(self):
         """Return all stored metrics."""
