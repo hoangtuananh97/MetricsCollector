@@ -21,6 +21,10 @@ class RedisMetricsStorage:
         """Returns the Redis key for storing metrics for a specific function."""
         return f"app:metrics:{func_name}"
 
+    def _get_key_metrics_list(self):
+        """Returns the Redis key for storing metrics for all function."""
+        return "metrics_list"
+
     def add_metrics(self, func_name, data):
         """Add or update metrics for the given function."""
         redis_key = self._get_redis_key(func_name)
@@ -43,10 +47,21 @@ class RedisMetricsStorage:
         # Save updated metrics back to Redis
         redis_client.set(redis_key, json.dumps(metrics))
 
+    def add_metrics_list(self, metric):
+        """Add metrics to list. Time complexity O(1)"""
+        redis_client.rpush(self._get_key_metrics_list(), str(metric))
+
+    def get_all_metrics_list(self):
+        """Get all metrics list."""
+        return [eval(item) for item in redis_client.lrange(self._get_key_metrics_list(), 0, -1)]
+
+    def get_len_metrics_list(self):
+        """Get length metrics list."""
+        return redis_client.llen('metrics_list')
+
     def get_metrics(self, func_name):
-        """Return all stored metrics for the given function."""
-        redis_key = self._get_redis_key(func_name)
-        metrics = redis_client.get(redis_key)
+        """Return all stored metrics for the given function. Time complexity O(1)"""
+        metrics = redis_client.get(self._get_redis_key(func_name))
         data = {}
         if metrics:
             data_json = json.loads(metrics)
@@ -65,6 +80,10 @@ class RedisMetricsStorage:
         """Clear the metrics for a specific function from Redis."""
         redis_key = self._get_redis_key(func_name)
         redis_client.delete(redis_key)
+
+    def clear_metrics_list(self):
+        """Clear all metrics."""
+        redis_client.delete(self._get_key_metrics_list())
 
 
 # Create an instance of RedisMetricsStorage

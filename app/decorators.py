@@ -2,7 +2,7 @@ import time
 from functools import wraps
 from dotenv import load_dotenv
 
-from .metrics_storage import metrics_storage
+from .singleton_storage import singleton_storage
 
 load_dotenv()
 
@@ -27,7 +27,7 @@ def metrics_collector(func):
             local_metrics['execution_time'] += (end_time - start_time)
 
             # Add metrics to the in-memory storage
-            metrics_storage.add_metrics(func.__name__, local_metrics)
+            singleton_storage.add_metrics(func.__name__, local_metrics)
 
         return result
 

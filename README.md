@@ -9,10 +9,12 @@ The **MetricsCollector** project is designed to collect and store function execu
 - **Function Metrics Collection**: Automatically collects execution time, call count, and error count for decorated functions.
 - **Asynchronous Task Management**: Uses Celery for asynchronous task processing and periodic metrics saving.
 - **Periodic Metrics Saving**: Periodically saves metrics to the database even if the limit is not reached.
-- **Auto Metrics Saving**: Auto saves metrics to the database even if the limit is reached.
+- **Auto Metrics Saving**: Auto saves metrics to the database even if the limit is reached. After removing record that saved on redis.
+- **Add calculate**: Calculate  `Number of calls`, `Average execution time`, `Number of errors` on `redis` Key `app:metrics:{func_name}`.
+- **Add record metrics**: Add new metrics entry on `redis`. Key `metrics_list`.
 - **Dockerized**: Easily deployable using Docker and Docker Compose for all components (Redis, Celery, and the application).
 - **Configurable Environment Variables**: The project uses a `.env` file for customizable configuration.
-- **Get List Metric**: List of `Number of calls`, `Average execution time`, `Number of errors` of each `Function`
+- **Get Metric**:  `Number of calls`, `Average execution time`, `Number of errors` of a `Function`
 ---
 
 ## Prerequisites
@@ -56,6 +58,9 @@ CELERY_BROKER_URL=redis://redis:6379/0
 
 # Redis result backend URL
 CELERY_RESULT_BACKEND=redis://redis:6379/0
+
+# REDIS_URL
+REDIS_URL=redis://redis:6379/0
 
 # Database name
 DATABASE_NAME=metrics.db

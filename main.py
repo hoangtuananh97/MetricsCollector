@@ -11,8 +11,7 @@ MAX_WAITING_TIME = int(os.getenv('MAX_WAITING_TIME', 60))
 # Example sync functions to test the decorator
 @metrics_collector
 def successful_function1(x, y):
-    random.random()
-    time.sleep(random.uniform(1, 5))
+    time.sleep(random.uniform(1, 3))
     return x + y
 
 
@@ -24,7 +23,7 @@ def successful_function2(x, y):
 
 @metrics_collector
 def error_function():
-    time.sleep(random.uniform(1, 5))
+    time.sleep(random.uniform(1, 3))
     raise ValueError("An error occurred")
 
 
@@ -47,11 +46,11 @@ def main():
     print("metrics_func2", metrics_func2)
     print("metrics_error", metrics_error)
 
-    print("Reset redis")
-    metrics_redis_storage.clear_metrics('successful_function1')
-    metrics_redis_storage.clear_metrics('successful_function2')
-    metrics_redis_storage.clear_metrics('error_function')
-    print("Reset successfully")
+    # print("Reset redis")
+    # metrics_redis_storage.clear_metrics('successful_function1')
+    # metrics_redis_storage.clear_metrics('successful_function2')
+    # metrics_redis_storage.clear_metrics('error_function')
+    # print("Reset successfully")
 
 
 # Run the example
