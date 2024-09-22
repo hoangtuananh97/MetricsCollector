@@ -4,6 +4,7 @@ from celery import Celery
 from dotenv import load_dotenv
 
 from app.database import insert
+from app.redis_storage import metrics_redis_storage
 
 load_dotenv()
 # Fetch environment variables
@@ -22,3 +23,8 @@ celery_app.conf.update(
 @celery_app.task
 def insert_metrics(metrics):
     insert(metrics)
+
+
+@celery_app.task
+def insert_redis_metrics(func_name, metrics):
+    metrics_redis_storage.add_metrics(func_name, metrics)

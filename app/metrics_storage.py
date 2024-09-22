@@ -4,6 +4,8 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
+from app.tasks import insert_redis_metrics
+
 # Load environment variables from the .env file
 load_dotenv()
 # Max items to save database
@@ -37,20 +39,25 @@ class InMemoryMetricsStorage:
         """Add or update metrics for the given function."""
 
         # Create new metrics entry
-        self.metrics.append(
-            {
-                'func_name': func_name,
-                'execution_time': data['execution_time'],
-                'error_occurred': data.get('error_occurred', 0),
-                'created_at': datetime.now(timezone.utc).timestamp()  # Store as Unix timestamp
-            }
-        )
+        metric = {
+            'func_name': func_name,
+            'execution_time': data['execution_time'],
+            'error_occurred': data.get('error_occurred', 0),
+            'created_at': datetime.now(timezone.utc).timestamp()
+        }
+        self.metrics.append(metric)
+
+        # Add to redis
+        self.save_redis_metrics(func_name, metric)
 
         if len(self.metrics) >= MAX_ITEMS:
             self.save_metrics()
 
         # Start the timer to save metrics if the limit is not reached
         self.start_timer()
+
+    def save_redis_metrics(self, func_name, metric):
+        insert_redis_metrics(func_name, metric)
 
     def save_metrics(self):
         """Save the metrics to the database."""

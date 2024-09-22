@@ -23,9 +23,6 @@ def connect_db():
     return conn, cursor
 
 
-import sqlite3
-
-
 def insert(metrics):
     """Insert multiple metrics into the database at once using bulk insert with error handling."""
     conn, cursor = connect_db()  # Ensure the connection and table are ready
