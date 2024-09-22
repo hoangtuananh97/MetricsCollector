@@ -252,8 +252,6 @@ To view collected metrics, open the SQLite database (`metrics.db`) and query the
 
 This architecture allows for **scalability**, **fault tolerance**, **efficient data handling**, and **advanced analysis** of microservice metrics across distributed environments.
 
----
-
 ### Technologies Integrated: Pros and Cons
 
 1. **Kafka** (Message Queue)
