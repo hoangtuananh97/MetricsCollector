@@ -29,6 +29,49 @@ Make sure you have the following software installed on your machine:
 
 ---
 
+## Step Approach
+```python
+Entry = {
+   'func_name': '<func_name>',
+   'execution_time': '<execution_time>',
+   'error_occurred': '<error_occurred>',
+   'created_at': '<timestamp UTC>'
+}
+```
+
+1. **Metrics Collection**: Automatically gathering function metrics helps analyze performance, identify bottlenecks, and spot potential issues (like error frequency).
+2. **Temporary caching**: With `app:metrics:{func_name}` key, add or update `Number of calls`, `Average execution time`, `Number of errors` record and with `metrics_list` key add the metrics `entry` to `redis`. `metrics_list` key will be removed after saving database. This is to avoid memory overflow in Redis. It is good for large metrics.
+3. **Asynchronous Task Management (Celery)**: Celery allows for efficient task handling, particularly useful when storing large amounts of data without blocking the main application.
+4. **Periodic Saving**: This ensures that even if the function isn’t frequently called, metrics will still be stored at regular intervals, maintaining data integrity.
+5. **Auto-saving on Threshold**: When a set number of metrics accumulate, they are automatically saved, preventing memory overload and ensuring timely data persistence.
+
+Using **Singleton Pattern** in Metrics Storage
+
+1. **Centralized Access**: A singleton ensures that there is only one instance of the metrics storage, which is essential for maintaining a consistent state across the application. Multiple instances could lead to conflicting or duplicated data.
+
+2. **Global Access**: A singleton provides global access to the metrics storage, which means any part of the application can easily add or retrieve metrics without passing the instance around.
+
+3. **Efficient Resource Management**: Having a single instance avoids excessive memory consumption, which would occur with multiple storage instances.
+
+4. **Thread-Safety**: In a multi-threaded environment (like when using `threading.Timer`), a singleton ensures that only one instance is being accessed and modified, reducing race conditions and ensuring safe data handling. 
+
+This setup ensures reliability, scalability, and real-time performance tracking.
+Singleton pattern is critical for projects where centralized, consistent, and low-memory storage is required, particularly for in-memory storage like in this project.
+
+### How it Works
+
+- Functions decorated with `@metrics_collector` will have their execution time, call count, and error count collected.
+- Auto save the `Number of calls`, `Average execution time`, `Number of errors` record to `redis`.
+- Auto save the metrics `entry` to `redis`.
+- Auto saves metrics to the database even if the limit is reached. the limit be set `MAX_ITEMS`. After removing Key `metrics_list` in `redis`.
+- Periodically saves metrics to the database even if the limit is not reached after schedule time be set `MAX_WAITING_TIME`.
+
+### Accessing the Metrics
+
+To view collected metrics, open the SQLite database (`metrics.db`) and query the `metrics` table. You can use a tool like `sqlite3` or any database viewer.
+
+---
+
 ## Installation & Configuration
 
 ### Step 1: Clone the Repository
@@ -158,36 +201,6 @@ To run the test by console:
 ```bash
 ./main.py
 ```
-
-### Step Approach
-
-1. **Metrics Collection**: Automatically gathering function metrics helps analyze performance, identify bottlenecks, and spot potential issues (like error frequency).
-2. **Asynchronous Task Management (Celery)**: Celery allows for efficient task handling, particularly useful when storing large amounts of data without blocking the main application.
-3. **Periodic Saving**: This ensures that even if the function isn’t frequently called, metrics will still be stored at regular intervals, maintaining data integrity.
-4. **Auto-saving on Threshold**: When a set number of metrics accumulate, they are automatically saved, preventing memory overload and ensuring timely data persistence.
-
-Using **Singleton Pattern** in Metrics Storage
-
-1. **Centralized Access**: A singleton ensures that there is only one instance of the metrics storage, which is essential for maintaining a consistent state across the application. Multiple instances could lead to conflicting or duplicated data.
-
-2. **Global Access**: A singleton provides global access to the metrics storage, which means any part of the application can easily add or retrieve metrics without passing the instance around.
-
-3. **Efficient Resource Management**: Having a single instance avoids excessive memory consumption, which would occur with multiple storage instances.
-
-4. **Thread-Safety**: In a multi-threaded environment (like when using `threading.Timer`), a singleton ensures that only one instance is being accessed and modified, reducing race conditions and ensuring safe data handling. 
-
-This setup ensures reliability, scalability, and real-time performance tracking.
-Singleton pattern is critical for projects where centralized, consistent, and low-memory storage is required, particularly for in-memory storage like in this project.
-
-### How it Works
-
-- Functions decorated with `@metrics_collector` will have their execution time, call count, and error count collected.
-- Auto saves metrics to the database even if the limit is reached. the limit be set `MAX_ITEMS`.
-- Periodically saves metrics to the database even if the limit is not reached after schedule time be set `MAX_WAITING_TIME`.
-
-### Accessing the Metrics
-
-To view collected metrics, open the SQLite database (`metrics.db`) and query the `metrics` table. You can use a tool like `sqlite3` or any database viewer.
 
 ---
 
