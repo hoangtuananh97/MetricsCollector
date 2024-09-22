@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
+from app.database import get_metrics
 from app.redis_storage import metrics_redis_storage
 from app.tasks import insert_redis_metrics
 
@@ -74,6 +75,12 @@ class SingletonMetricsStorage:
         # Cancel the timer after saving metrics
         if self.timer is not None:
             self.timer.cancel()
+
+    def get_metrics(self, func_name):
+        data = metrics_redis_storage.get_metrics(func_name)
+        if not data:
+            data = get_metrics(func_name)
+        return data
 
     def clear_metrics(self):
         """Clear all metrics."""

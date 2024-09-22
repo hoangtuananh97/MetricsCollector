@@ -4,6 +4,7 @@ import time
 
 from app.decorators import metrics_collector
 from app.redis_storage import metrics_redis_storage
+from app.singleton_storage import singleton_storage
 
 MAX_WAITING_TIME = int(os.getenv('MAX_WAITING_TIME', 60))
 
@@ -29,19 +30,19 @@ def error_function():
 
 # Example usage
 def main():
-    print("Run Function. Random time")
-    try:
-        successful_function1(2, 3)
-        for _ in range(2):
-            successful_function2(2, 3)
-        error_function()
-    except ValueError:
-        pass
+    # print("Run Function. Random time")
+    # try:
+    #     successful_function1(2, 3)
+    #     for _ in range(2):
+    #         successful_function2(2, 3)
+    #     error_function()
+    # except ValueError:
+    #     pass
 
     print("Get Metrics")
-    metrics_func1 = metrics_redis_storage.get_metrics('successful_function1')
-    metrics_func2 = metrics_redis_storage.get_metrics('successful_function2')
-    metrics_error = metrics_redis_storage.get_metrics('error_function')
+    metrics_func1 = singleton_storage.get_metrics('successful_function1')
+    metrics_func2 = singleton_storage.get_metrics('successful_function2')
+    metrics_error = singleton_storage.get_metrics('error_function')
     print("metrics_func1", metrics_func1)
     print("metrics_func2", metrics_func2)
     print("metrics_error", metrics_error)

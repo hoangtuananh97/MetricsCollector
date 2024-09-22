@@ -46,7 +46,7 @@ def insert(metrics):
             conn.close()
 
 
-def get_list():
+def get_metrics_list():
     """Retrieve all metrics from the database as a list of dictionaries."""
     conn, cursor = connect_db()  # Ensure connection is established
     cursor.execute("""
@@ -74,3 +74,32 @@ def get_list():
     conn.close()  # Always close the connection when done
 
     return {"count": len(metrics), "metrics": metrics}
+
+
+def get_metrics(func_name):
+    """Retrieve metrics from the database as a name function."""
+    conn, cursor = connect_db()  # Ensure connection is established
+    cursor.execute(f"""
+    SELECT func_name, 
+       COUNT(*) AS call_count, 
+       SUM(execution_time) AS total_execution_time, 
+       SUM(error_occurred) AS total_errors
+    FROM metrics
+    WHERE func_name = '{func_name}'
+    GROUP BY func_name;
+    """)
+
+    # Fetch all rows from the metrics table
+    row = cursor.fetchone()
+
+    # Convert rows to a list of dictionaries
+    metrics = {
+        "Function": row[0],
+        "Number of calls": row[1],
+        "Average execution time": row[2] / row[1],
+        "Number of errors": row[3],
+    }
+
+    conn.close()  # Always close the connection when done
+
+    return metrics
